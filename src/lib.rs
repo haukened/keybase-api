@@ -1,5 +1,5 @@
 use futures::channel::mpsc;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Deserializer};
 use std::error::Error;
 use std::{fmt, io};
 
@@ -91,7 +91,21 @@ pub struct DeviceResponse {
     name: String,
     #[serde(rename = "deviceID")]
     device_id: String,
+    #[serde(deserialize_with = "de_bool_from_int")]
     status: bool,
+}
+
+fn de_bool_from_int<'de, D>(deserializer: D) -> Result<bool, D::Error>
+    where D: Deserializer<'de>
+{
+    match u8::deserialize(deserializer)? {
+        0 => Ok(false),
+        1 => Ok(true),
+        other => Err(serde::de::Error::invalid_value(
+            serde::de::Unexpected::Unsigned(other as u64),
+            &"zero or one",
+        )),
+    }
 }
 
 #[derive(Debug)]
@@ -150,5 +164,20 @@ mod tests {
     fn can_find_keybase() {
         println!("Keybase is at: {:?}", find_keybase());
         assert!(!find_keybase().to_str().unwrap().is_empty());
+    }
+
+    #[test]
+    fn can_find_version() {
+        let kb_path = find_keybase();
+        println!("Keybase is version {:?}", call_version(&kb_path).unwrap());
+        assert!(!call_version(&kb_path).unwrap().is_empty());
+    }
+
+    #[test]
+    fn can_get_device_info() {
+        let kb_path = find_keybase();
+        let s = call_status(&kb_path).unwrap();
+        println!("{} is logged into keybase on {}", s.username, s.device.name);
+        assert!(s.logged_in == true);
     }
 }
