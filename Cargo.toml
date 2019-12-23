@@ -1,0 +1,21 @@
+[package]
+name = "keybase-api"
+version = "0.1.0"
+authors = ["David Haukeness <david@hauken.us>"]
+edition = "2018"
+description = "Create rust apps for Keybase"
+readme = "README.md"
+keywords = ["keybase"]
+categories = ["api-bindings"]
+license = "GNU General Public License v3.0"
+repository = "https://github.com/haukened/keybase-api"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies.serde]
+version = "1.0"
+features = ["derive"]
+
+[dependencies.serde_json]
+version = "1.0"
