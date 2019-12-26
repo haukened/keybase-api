@@ -8,6 +8,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Get Keybase
+      run: curl --remote-name https://prerelease.keybase.io/keybase_amd64.deb
+    - name: Disable Keybase Repo
+      run: sudo touch /etc/default/keybase
+    - name: Install Keybase
+      run: sudo apt install ./keybase_amd64.deb
+    - name: Run Keybase
+      run: run_keybase
     - uses: actions/checkout@v1
     - name: Build
       run: cargo build --verbose
