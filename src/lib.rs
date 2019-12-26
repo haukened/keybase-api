@@ -172,12 +172,4 @@ mod tests {
         println!("Keybase is version {:?}", call_version(&kb_path).unwrap());
         assert!(!call_version(&kb_path).unwrap().is_empty());
     }
-
-    #[test]
-    fn can_get_device_info() {
-        let kb_path = find_keybase();
-        let s = call_status(&kb_path).unwrap();
-        println!("{} is logged into keybase on {}", s.username, s.device.name);
-        assert!(s.logged_in == true);
-    }
 }
