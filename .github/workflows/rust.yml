@@ -18,7 +18,7 @@ jobs:
       id: cache
       with:
         path: mycache
-        key: %{{ runner.os }}-${{ hashFiles('mycache') }}
+        key: ${{ runner.os }}-${{ hashFiles('mycache') }}
     - name: Copy cargo-tarpaulin From Cache
       if: steps.cache.output.cache-hit == 'true'
       run: cp mycache/* ~/.cargo/bin/
