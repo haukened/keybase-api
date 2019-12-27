@@ -14,25 +14,25 @@ jobs:
     - name: Install libssl-dev
       run: sudo apt install -y libssl-dev
     - name: Create custom cache directory
-      run: mkdir tarp-cache
+      run: mkdir $GITHUB_WORKSPACE/tarp-cache
     - name: Get cargo-tarpaulin from cache
       uses: actions/cache@v1
       id: cache
       with:
-        path: tarp-cache
+        path: $GITHUB_WORKSPACE/tarp-cache
         key: ${{ runner.os }}-keybase-api-tarpaulin
       continue-on-error: true
     - name: Copy cargo-tarpaulin From Cache
       id: tarp-copy
       if: steps.cache.output.cache-hit == 'true'
-      run: cp tarp-cache/* ~/.cargo/bin/
+      run: cp $GITHUB_WORKSPACE/tarp-cache/* ~/.cargo/bin/
       continue-on-error: true
     - name: Install cargo-tarpaulin
       if: steps.cache.output.cache-hit != 'true' || failure()
       run: cargo install cargo-tarpaulin -f
     - name: Cache cargo-tarpaulin
       if: steps.cache.output.cache-hit != 'true'
-      run: cp ~/.cargo/bin/cargo-tarpaulin tarp-cache/
+      run: cp ~/.cargo/bin/cargo-tarpaulin $GITHUB_WORKSPACE/tarp-cache/
     - name: Get Keybase
       run: curl --remote-name https://prerelease.keybase.io/keybase_amd64.deb
     - name: Disable Keybase Repo
