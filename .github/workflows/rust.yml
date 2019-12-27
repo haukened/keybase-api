@@ -14,12 +14,12 @@ jobs:
     - name: Install libssl-dev
       run: sudo apt install -y libssl-dev
     - name: Create custom cache directory
-      run: mkdir mycache
+      run: mkdir ~/mycache
     - name: Get cargo-tarpaulin from cache
       uses: actions/cache@v1
       id: cache
       with:
-        path: mycache
+        path: ~/mycache
         key: ${{ runner.os }}-${{ hashFiles('mycache') }}
     - name: Copy cargo-tarpaulin From Cache
       if: steps.cache.output.cache-hit == 'true'
