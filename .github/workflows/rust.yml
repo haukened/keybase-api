@@ -1,6 +1,9 @@
 name: Cargo Build and Test
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+    - ./README.md
 
 jobs:
   build:
