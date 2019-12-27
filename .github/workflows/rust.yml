@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Install libels-dev
+    - name: Install libssl-dev
       run: sudo apt install -y libssl-dev
     - name: Install tarpaulin
       run: cargo install cargo-tarpaulin -f
