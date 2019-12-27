@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
     - name: Install libssl-dev
       run: sudo apt install -y libssl-dev
     - name: Create custom cache directory
@@ -41,7 +43,6 @@ jobs:
       run: sudo apt install ./keybase_amd64.deb
     - name: Run Keybase
       run: run_keybase
-    - uses: actions/checkout@v1
     - name: Build
       run: cargo build --verbose
     - name: Run tests
