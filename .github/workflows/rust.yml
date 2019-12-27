@@ -3,7 +3,7 @@ name: Cargo Build and Test
 on:
   push:
     paths-ignore:
-    - ./README.md
+    - README.md
 
 jobs:
   build:
