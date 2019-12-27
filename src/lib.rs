@@ -173,4 +173,17 @@ mod tests {
         println!("Keybase is version {:?}", call_version(&kb_path).unwrap());
         assert!(!call_version(&kb_path).unwrap().is_empty());
     }
+
+    #[test]
+    fn can_get_status() {
+        let kb_path = find_keybase();
+        let kb_status = call_status(&kb_path).unwrap();
+        if kb_status.logged_in {
+            println!("Keybae is logged in");
+        } else {
+            println!("Keybase is NOT logged in");
+        }
+        // ensure the value must be true or false
+        assert!(kb_status.logged_in == false || kb_status.logged_in == true);
+    }
 }
