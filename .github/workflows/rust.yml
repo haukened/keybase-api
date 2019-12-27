@@ -20,6 +20,9 @@ jobs:
     - name: Run Keybase
       run: run_keybase
     - uses: actions/checkout@v1
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
     - name: Build
       run: cargo build --verbose
     - name: Run tests
