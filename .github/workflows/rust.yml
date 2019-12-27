@@ -13,8 +13,21 @@ jobs:
     steps:
     - name: Install libssl-dev
       run: sudo apt install -y libssl-dev
-    - name: Install tarpaulin
+    - name: Get cargo-tarpaulin from cache
+      uses: actions/cache@v1
+      id: cache
+      with:
+        path: mycache
+        key: %{{ runner.os }}-${{ hashFiles('mycache') }}
+    - name: Copy cargo-tarpaulin From Cache
+      if: steps.cache.output.cache-hit == 'true'
+      run: cp mycache/* ~/.cargo/bin/
+    - name: Install cargo-tarpaulin
+      if: steps.cache.output.cache-hit != 'true'
       run: cargo install cargo-tarpaulin -f
+    - name: Cache cargo-tarpaulin
+      if: steps.cache.output.cache-hit != 'true'
+      run: cp ~/.cargo/bin/cargo-tarpaulin mycache/
     - name: Get Keybase
       run: curl --remote-name https://prerelease.keybase.io/keybase_amd64.deb
     - name: Disable Keybase Repo
