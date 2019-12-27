@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Install libels-dev
+      run: sudo apt install -y libssl-dev
+    - name: Install tarpaulin
+      run: cargo install cargo-tarpaulin -f
     - name: Get Keybase
       run: curl --remote-name https://prerelease.keybase.io/keybase_amd64.deb
     - name: Disable Keybase Repo
@@ -20,10 +24,13 @@ jobs:
     - name: Run Keybase
       run: run_keybase
     - uses: actions/checkout@v1
-    - uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
     - name: Build
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Generate Code Coverage Report
+      run: cargo tarpaulin --out Xml
+    - name: Upload Code Coverage Report
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
