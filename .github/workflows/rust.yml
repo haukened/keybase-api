@@ -17,12 +17,14 @@ jobs:
       run: sudo apt install -y libssl-dev
     - name: Create custom cache directory
       run: mkdir tarp-cache
+    - name: Set week number for cache
+      run: echo ::set-env name=WEEKNUM::$(/bin/date +%V)
     - name: Get cargo-tarpaulin from cache
       uses: actions/cache@v1
       id: cache
       with:
         path: tarp-cache
-        key: ${{ runner.os }}-keybase-api-tarpaulin
+        key: ${{ runner.os }}-${{ env.WEEKNUM }}-keybase-api
       continue-on-error: true
     - name: Copy cargo-tarpaulin From Cache
       id: tarp-copy
