@@ -13,6 +13,8 @@ jobs:
     steps:
     - name: Install libssl-dev
       run: sudo apt install -y libssl-dev
+    - name: Create custom cache directory
+      run: mkdir mycache
     - name: Get cargo-tarpaulin from cache
       uses: actions/cache@v1
       id: cache
