@@ -95,6 +95,7 @@ pub struct DeviceResponse {
     status: bool,
 }
 
+#[cfg_attr(tarpaulin, skip)]
 fn de_bool_from_int<'de, D>(deserializer: D) -> Result<bool, D::Error>
     where D: Deserializer<'de>
 {
