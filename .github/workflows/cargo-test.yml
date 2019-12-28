@@ -19,7 +19,13 @@ jobs:
       run: sudo touch /etc/default/keybase
     - name: Install Keybase
       run: sudo apt install ./keybase_amd64.deb
-    - name: Run Keybase
-      run: run_keybase
+    - name: Keybase Login
+      env:
+        KEYBASE_USERNAME: ${{ secrets.KEYBASE_USERNAME }}
+        KEYBASE_PAPERKEY: ${{ secrets.KEYBASE_PAPERKEY }}
+      run: keybase oneshot
     - name: Run tests
       run: cargo test --verbose
+    - name: Keybase Logout
+      if: always()
+      run: keybase logout
