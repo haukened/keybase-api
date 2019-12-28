@@ -1,4 +1,4 @@
-name: Cargo Build and Test
+name: Cargo Test
 
 on:
   push:
@@ -13,6 +13,30 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+    - name: Install libssl-dev
+      run: sudo apt install -y libssl-dev
+    - name: Create custom cache directory
+      run: mkdir tarp-cache
+    - name: Set week number for cache
+      run: echo ::set-env name=WEEKNUM::$(/bin/date +%V)
+    - name: Get cargo-tarpaulin from cache
+      uses: actions/cache@v1
+      id: cache
+      with:
+        path: tarp-cache
+        key: ${{ runner.os }}-${{ env.WEEKNUM }}-keybase-api
+      continue-on-error: true
+    - name: Copy cargo-tarpaulin From Cache
+      id: tarp-copy
+      if: steps.cache.outputs.cache-hit == 'true'
+      run: cp tarp-cache/* ~/.cargo/bin/
+      continue-on-error: true
+    - name: Install cargo-tarpaulin
+      if: steps.cache.outputs.cache-hit != 'true' || failure()
+      run: cargo install cargo-tarpaulin -f
+    - name: Cache cargo-tarpaulin
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: cp ~/.cargo/bin/cargo-tarpaulin tarp-cache/
     - name: Get Keybase
       run: curl --remote-name https://prerelease.keybase.io/keybase_amd64.deb
     - name: Disable Keybase Repo
@@ -23,3 +47,9 @@ jobs:
       run: run_keybase
     - name: Run tests
       run: cargo test --verbose
+    - name: Generate Code Coverage Report
+      run: cargo tarpaulin --out Xml
+    - name: Upload Code Coverage Report
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
