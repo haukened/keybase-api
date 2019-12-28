@@ -1,0 +1,25 @@
+name: Cargo Build and Test
+
+on:
+  push:
+    paths-ignore:
+    - README.md
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Get Keybase
+      run: curl --remote-name https://prerelease.keybase.io/keybase_amd64.deb
+    - name: Disable Keybase Repo
+      run: sudo touch /etc/default/keybase
+    - name: Install Keybase
+      run: sudo apt install ./keybase_amd64.deb
+    - name: Run Keybase
+      run: run_keybase
+    - name: Run tests
+      run: cargo test --verbose
