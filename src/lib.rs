@@ -1,24 +1,12 @@
-use futures::channel::mpsc;
 use serde::{Deserialize, Serialize, Deserializer};
 use std::error::Error;
 use std::{fmt, io};
 
 pub(crate) mod keybase_cmd {
-    use super::{ApiError, KBError, StatusResponse};
-    use serde::{Deserialize, Serialize};
+    use super::{ApiError, StatusResponse};
     use serde_json;
     use std::path::{Path, PathBuf};
     use std::process::{Child, Command, Stdio};
-
-    thread_local! {
-        pub static KEYBASE: PathBuf = find_keybase();
-    }
-
-    #[derive(Deserialize, Serialize)]
-    pub struct APIResult<T> {
-        pub result: Option<T>,
-        pub error: Option<KBError>,
-    }
 
     pub fn find_keybase() -> PathBuf {
         let local_path = String::from_utf8(
@@ -116,7 +104,6 @@ pub enum ApiError {
     IOErr(io::Error),
     KBErr(KBError),
     UTF8Err(std::string::FromUtf8Error),
-    ChannelErr(mpsc::SendError),
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -132,12 +119,6 @@ impl fmt::Display for ApiError {
 }
 
 impl Error for ApiError {}
-
-impl From<mpsc::SendError> for ApiError {
-    fn from(error: mpsc::SendError) -> Self {
-        ApiError::ChannelErr(error)
-    }
-}
 
 impl From<std::string::FromUtf8Error> for ApiError {
     fn from(error: std::string::FromUtf8Error) -> Self {
@@ -178,12 +159,8 @@ mod tests {
     fn can_get_status() {
         let kb_path = find_keybase();
         let kb_status = call_status(&kb_path).unwrap();
-        if kb_status.logged_in {
-            println!("Keybae is logged in");
-        } else {
-            println!("Keybase is NOT logged in");
-        }
-        // ensure the value must be true or false
+        // ensure the value must be true or false - this will fail if the device is not provisioned
+        // As the DeviceResponse struct will come from a JSON null entry and panic.
         assert!(kb_status.logged_in == false || kb_status.logged_in == true);
     }
 }
