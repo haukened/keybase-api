@@ -1,0 +1,46 @@
+name: Code Coverage (Test)
+
+on:
+  push:
+    paths-ignore:
+    - README.md
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        override: true
+    - name: Get Keybase
+      run: curl --remote-name https://prerelease.keybase.io/keybase_amd64.deb
+    - name: Disable Keybase Repo
+      run: sudo touch /etc/default/keybase
+    - name: Install Keybase
+      run: sudo apt install ./keybase_amd64.deb
+    - name: Keybase Login
+      env:
+        KEYBASE_USERNAME: ${{ secrets.KEYBASE_USERNAME }}
+        KEYBASE_PAPERKEY: ${{ secrets.KEYBASE_PAPERKEY }}
+      run: keybase oneshot
+    - name: Cargo Test
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --lib --all-features --no-fail-fast
+      env:
+        CARGO_INCREMENTAL: '0'
+        RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads'
+    - name: Keybase Logout
+      if: always()
+      run: keybase logout
+    - name: Generate Code Coverage Report
+      uses: actions-rs/grcov@v0.1
+      id: coverage
+    - name: Upload Code Coverage Report
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ${{ steps.coverage.output.report }}
