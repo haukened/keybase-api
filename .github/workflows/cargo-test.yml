@@ -37,12 +37,18 @@ jobs:
     - name: Cache cargo-tarpaulin
       if: steps.cache.outputs.cache-hit != 'true'
       run: cp ~/.cargo/bin/cargo-tarpaulin tarp-cache/
+    - name: Get Keybase
+      run: curl --remote-name https://prerelease.keybase.io/keybase_amd64.deb
+    - name: Disable Keybase Repo
+      run: sudo touch /etc/default/keybase
+    - name: Install Keybase
+      run: sudo apt install ./keybase_amd64.deb
     - name: Keybase Login
       env:
         KEYBASE_USERNAME: ${{ secrets.KEYBASE_USERNAME }}
         KEYBASE_PAPERKEY: ${{ secrets.KEYBASE_PAPERKEY }}
       run: keybase oneshot
-    - name: Generate Code Coverage Report
+    - name: Cargo Tests and Code Coverage Report
       run: cargo tarpaulin --out Xml
     - name: Keybase Logout
       if: always()
