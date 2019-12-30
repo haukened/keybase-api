@@ -156,11 +156,26 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn cant_find_version() {
+        let kb_fakepath = std::path::Path::new("/dev/null").to_path_buf();
+        assert!(!call_version(&kb_fakepath).unwrap().is_empty());
+    }
+
+    #[test]
     fn can_get_status() {
         let kb_path = find_keybase();
         let kb_status = call_status(&kb_path).unwrap();
         // ensure the value must be true or false - this will fail if the device is not provisioned
         // As the DeviceResponse struct will come from a JSON null entry and panic.
+        assert!(kb_status.logged_in == false || kb_status.logged_in == true);
+    }
+
+    #[test]
+    #[should_panic]
+    fn cant_get_status() {
+        let kb_fakepath = std::path::Path::new("/dev/null").to_path_buf();
+        let kb_status = call_status(&kb_fakepath).unwrap();
         assert!(kb_status.logged_in == false || kb_status.logged_in == true);
     }
 }
