@@ -131,7 +131,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn cant_find_version() {
-        let kb_fakepath = std::path::Path::new("/dev/null").to_path_buf();
+        let kb_fakepath = std::path::Path::new("/bin/false").to_path_buf();
         assert!(!call_version(&kb_fakepath).unwrap().is_empty());
     }
 
@@ -147,7 +147,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn cant_get_status() {
-        let kb_fakepath = std::path::Path::new("/dev/null").to_path_buf();
+        let kb_fakepath = std::path::Path::new("/bin/false").to_path_buf();
         let kb_status = call_status(&kb_fakepath).unwrap();
         assert!(kb_status.logged_in == false || kb_status.logged_in == true);
     }
