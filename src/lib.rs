@@ -3,7 +3,7 @@ use std::error::Error;
 use std::{fmt, io};
 
 pub(crate) mod keybase_cmd {
-    use super::{ApiError, StatusResponse};
+    use super::{ApiError::*, StatusResponse};
     use serde_json;
     use std::path::{Path, PathBuf};
     use std::process::{Child, Command, Stdio};
@@ -20,7 +20,7 @@ pub(crate) mod keybase_cmd {
         Path::new(local_path.trim()).to_path_buf()
     }
 
-    pub fn call_status(keybase_path: &Path) -> Result<StatusResponse, ApiError> {
+    pub fn call_status(keybase_path: &Path) -> Result<StatusResponse> {
         let child_proc = exec(keybase_path, &["status", "-j"])?;
         let output = child_proc.wait_with_output()?;
         if !output.status.success() {
@@ -35,7 +35,7 @@ pub(crate) mod keybase_cmd {
         Ok(res)
     }
 
-    pub fn call_version(keybase_path: &Path) -> Result<String, ApiError> {
+    pub fn call_version(keybase_path: &Path) -> Result<String> {
         let child_proc = exec(keybase_path, &["version", "-S", "-f", "s"])?;
         let output = child_proc.wait_with_output()?;
         if !output.status.success() {
@@ -49,7 +49,7 @@ pub(crate) mod keybase_cmd {
         Ok(output)
     }
 
-    pub fn exec<I, S>(keybase_path: &Path, args: I) -> Result<Child, std::io::Error>
+    pub fn exec<I, S>(keybase_path: &Path, args: I) -> Result<Child>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<std::ffi::OsStr>,
@@ -59,6 +59,7 @@ pub(crate) mod keybase_cmd {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
+            .chain_err(|| "failed to execute keybase command")
     }
 }
 
@@ -97,44 +98,16 @@ fn de_bool_from_int<'de, D>(deserializer: D) -> Result<bool, D::Error>
     }
 }
 
-#[derive(Debug)]
-pub enum ApiError {
-    Parsing(serde_json::error::Error),
-    ParsingWithRaw(serde_json::error::Error, String),
-    IOErr(io::Error),
-    KBErr(KBError),
-    UTF8Err(std::string::FromUtf8Error),
-}
+#[macro_use]
+extern crate error_chain;
 
-#[derive(Deserialize, Serialize, Debug)]
-pub struct KBError {
-    pub code: i32,
-    pub message: String,
-}
-
-impl fmt::Display for ApiError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl Error for ApiError {}
-
-impl From<std::string::FromUtf8Error> for ApiError {
-    fn from(error: std::string::FromUtf8Error) -> Self {
-        ApiError::UTF8Err(error)
-    }
-}
-
-impl From<serde_json::error::Error> for ApiError {
-    fn from(error: serde_json::error::Error) -> Self {
-        ApiError::Parsing(error)
-    }
-}
-
-impl From<std::io::Error> for ApiError {
-    fn from(error: std::io::Error) -> Self {
-        ApiError::IOErr(error)
+pub mod ApiError {
+    error_chain! {
+        foreign_links {
+            Parsing(::serde_json::error::Error);
+            IOErr(::std::io::Error);
+            UTF8Err(std::string::FromUtf8Error);
+        }
     }
 }
 

@@ -15,6 +15,9 @@ repository = "https://github.com/haukened/keybase-api"
 [dependencies.futures-preview]
 version = "0.3.0-alpha.18"
 
+[dependencies.error-chain]
+version = "0.12.1"
+
 [dependencies.serde]
 version = "1.0"
 features = ["derive"]
