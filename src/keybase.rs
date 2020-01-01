@@ -69,10 +69,10 @@ mod tests {
 
     #[test]
     fn can_create_keybase() {
-        let k = Keybase::new("none", "none", Some(PathBuf::from("/bin/keybase"))).unwrap();
+        let k = Keybase::new("none", "none", None).unwrap();
         assert_eq!(k.username, String::from("none"));
         assert_eq!(k.paperkey, String::from("none"));
-        assert_eq!(k.keybase_path, PathBuf::from("/bin/keybase"));
+        assert_eq!(k.keybase_path, super::keybase_cmd::find_keybase().unwrap());
     }
 
     #[test]
