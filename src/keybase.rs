@@ -83,7 +83,7 @@ mod tests {
 
     #[test]
     fn can_print_keybase() {
-        let k = Keybase::new("none", "none", Some(PathBuf::from("/bin/keybase"))).unwrap();
+        let k = Keybase::new("none", "none", None).unwrap();
         println!("{:?}", k);
     }
 }
