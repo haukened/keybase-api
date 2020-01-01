@@ -1,6 +1,4 @@
 use serde::{Deserialize, Serialize, Deserializer};
-use std::error::Error;
-use std::{fmt, io};
 
 pub(crate) mod keybase_cmd {
     use super::{ApiError::*, StatusResponse};
@@ -129,10 +127,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn cant_find_version() {
         let kb_fakepath = std::path::Path::new("/bin/false").to_path_buf();
-        assert!(!call_version(&kb_fakepath).unwrap().is_empty());
+        assert!(call_version(&kb_fakepath).is_err());
     }
 
     #[test]
@@ -145,10 +142,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn cant_get_status() {
         let kb_fakepath = std::path::Path::new("/bin/false").to_path_buf();
-        let kb_status = call_status(&kb_fakepath).unwrap();
-        assert!(kb_status.logged_in == false || kb_status.logged_in == true);
+        assert!(call_status(&kb_fakepath).is_err());
+    }
+
+    #[test]
+    fn cant_exec_command() {
+        let kb_fakepath = std::path::Path::new("/none/abcde").to_path_buf();
+        assert!(exec(&kb_fakepath, &["none", "nil", "nada"]).is_err())
     }
 }
