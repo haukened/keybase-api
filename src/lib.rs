@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize, Deserializer};
 
 pub(crate) mod keybase_cmd {
-    use super::{ApiError::*, StatusResponse};
+    use super::{api_error::*, StatusResponse};
     use serde_json;
     use std::path::{Path, PathBuf};
     use std::process::{Child, Command, Stdio};
@@ -99,7 +99,7 @@ fn de_bool_from_int<'de, D>(deserializer: D) -> Result<bool, D::Error>
 #[macro_use]
 extern crate error_chain;
 
-pub mod ApiError {
+pub mod api_error {
     error_chain! {
         foreign_links {
             Parsing(::serde_json::error::Error);
