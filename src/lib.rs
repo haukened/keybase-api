@@ -1,3 +1,6 @@
+pub mod keybase;
+pub use keybase::Keybase;
+
 use serde::{Deserialize, Serialize, Deserializer};
 
 pub(crate) mod keybase_cmd {
@@ -6,7 +9,7 @@ pub(crate) mod keybase_cmd {
     use std::path::{Path, PathBuf};
     use std::process::{Child, Command, Stdio};
 
-    pub fn find_keybase() -> PathBuf {
+    pub fn find_keybase() -> Result<PathBuf> {
         let local_path = String::from_utf8(
             Command::new("which")
                 .arg("keybase")
@@ -15,7 +18,7 @@ pub(crate) mod keybase_cmd {
                 .stdout,
         )
         .expect("Output not in UTF-8");
-        Path::new(local_path.trim()).to_path_buf()
+        Ok(Path::new(local_path.trim()).to_path_buf())
     }
 
     pub fn call_status(keybase_path: &Path) -> Result<StatusResponse> {
@@ -116,12 +119,12 @@ mod tests {
     #[test]
     fn can_find_keybase() {
         println!("Keybase is at: {:?}", find_keybase());
-        assert!(!find_keybase().to_str().unwrap().is_empty());
+        assert!(!find_keybase().unwrap().to_str().unwrap().is_empty());
     }
 
     #[test]
     fn can_find_version() {
-        let kb_path = find_keybase();
+        let kb_path = find_keybase().unwrap();
         println!("Keybase is version {:?}", call_version(&kb_path).unwrap());
         assert!(!call_version(&kb_path).unwrap().is_empty());
     }
@@ -134,7 +137,7 @@ mod tests {
 
     #[test]
     fn can_get_status() {
-        let kb_path = find_keybase();
+        let kb_path = find_keybase().unwrap();
         let kb_status = call_status(&kb_path).unwrap();
         // ensure the value must be true or false - this will fail if the device is not provisioned
         // As the DeviceResponse struct will come from a JSON null entry and panic.
