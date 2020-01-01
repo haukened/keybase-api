@@ -58,3 +58,32 @@ impl Keybase {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Keybase;
+    use std::{
+        string::String,
+        path::PathBuf,
+    };
+
+    #[test]
+    fn can_create_keybase() {
+        let k = Keybase::new("none", "none", Some(PathBuf::from("/bin/keybase"))).unwrap();
+        assert_eq!(k.username, String::from("none"));
+        assert_eq!(k.paperkey, String::from("none"));
+        assert_eq!(k.keybase_path, PathBuf::from("/bin/keybase"));
+    }
+
+    #[test]
+    fn cant_create_keybase() {
+        let k = Keybase::new("none", "none", Some(PathBuf::from("/bin/false")));
+        assert!(k.is_err());
+    }
+
+    #[test]
+    fn can_print_keybase() {
+        let k = Keybase::new("none", "none", Some(PathBuf::from("/bin/keybase"))).unwrap();
+        println!("{:?}", k);
+    }
+}
