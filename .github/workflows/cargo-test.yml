@@ -49,11 +49,7 @@ jobs:
         KEYBASE_PAPERKEY: ${{ secrets.KEYBASE_PAPERKEY }}
       run: keybase oneshot
     - name: Cargo Tests and Code Coverage Report
-      run: cargo tarpaulin --out Xml
+      run: cargo tarpaulin --coveralls ${{ secrets.COVERALLS_TOKEN }}
     - name: Keybase Logout
       if: always()
       run: keybase logout
-    - name: Upload Code Coverage Report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
