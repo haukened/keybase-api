@@ -6,16 +6,6 @@ use std::{
     thread::JoinHandle,
 };
 
-pub mod keybase_error {
-    error_chain! {
-        foreign_links {
-            Parsing(::serde_json::error::Error);
-            IOErr(::std::io::Error);
-            UTF8Err(std::string::FromUtf8Error);
-        }        
-    }
-}
-
 use super::keybase_error::*;
 
 pub struct Keybase {
