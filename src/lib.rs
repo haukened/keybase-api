@@ -7,7 +7,7 @@ pub(crate) mod keybase_cmd {
     use super::{keybase_error::*, StatusResponse};
     use serde_json;
     use std::path::{Path, PathBuf};
-    use std::process::{Child, Command, Stdio};
+    use std::process::{Command, Stdio};
 
     pub fn find_keybase() -> Result<PathBuf> {
         let local_path = String::from_utf8(
@@ -22,45 +22,36 @@ pub(crate) mod keybase_cmd {
     }
 
     pub fn call_status(keybase_path: &Path) -> Result<StatusResponse> {
-        let child_proc = exec(keybase_path, &["status", "-j"])?;
-        let output = child_proc.wait_with_output()?;
-        if !output.status.success() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "Keybase returned non-zero exit code",
-            )
-            .into());
-        }
-        let output = String::from_utf8(output.stdout)?;
+        let output = exec(keybase_path, &["status", "-j"])?;
         let res: StatusResponse = serde_json::from_str(&output)?;
         Ok(res)
     }
 
     pub fn call_version(keybase_path: &Path) -> Result<String> {
-        let child_proc = exec(keybase_path, &["version", "-S", "-f", "s"])?;
+        let output = exec(keybase_path, &["version", "-S", "-f", "s"])?;
+        Ok(output)
+    }
+
+    pub fn exec<I, S>(keybase_path: &Path, args: I) -> Result<String>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<std::ffi::OsStr>,
+    {
+        let child_proc = Command::new(keybase_path)
+            .args(args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .chain_err(|| "Failed to execute Keybase command")?;
         let output = child_proc.wait_with_output()?;
         if !output.status.success() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 "Keybase returned non-zero exit code",
-            )
-            .into());
+            ).into());
         }
         let output = String::from_utf8(output.stdout)?;
         Ok(output)
-    }
-
-    pub fn exec<I, S>(keybase_path: &Path, args: I) -> Result<Child>
-    where
-        I: IntoIterator<Item = S>,
-        S: AsRef<std::ffi::OsStr>,
-    {
-        Command::new(keybase_path)
-            .args(args)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()
-            .chain_err(|| "failed to execute keybase command")
     }
 }
 
