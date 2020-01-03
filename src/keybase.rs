@@ -52,11 +52,13 @@ impl Keybase {
 
     pub fn logout(&mut self) -> Result<()> {
         let _output = keybase_cmd::exec(&self.keybase_path, &["logout"], None)?;
+        self.status = keybase_cmd::call_status(&self.keybase_path)?;
         Ok(())
     }
 
     pub fn login(&mut self) -> Result<()> {
         let _output = keybase_cmd::exec(&self.keybase_path, &["oneshot", "-u", &self.username.as_mut_str()], Some(self.paperkey.clone()))?;
+        self.status = keybase_cmd::call_status(&self.keybase_path)?;
         Ok(())
     }
 }
@@ -91,20 +93,17 @@ mod tests {
     }
 
     #[test]
-    fn can_login() {
+    fn can_logout_then_login() {
         let ku = var("KEYBASE_USERNAME").unwrap();
         let kp = var("KEYBASE_PAPERKEY").unwrap();
         let mut k = Keybase::new(ku, kp, None).unwrap();
-        let result = k.login();
-        assert!(!result.is_err());
-    }
-
-    #[test]
-    fn can_logout() {
-        let ku = var("KEYBASE_USERNAME").unwrap();
-        let kp = var("KEYBASE_PAPERKEY").unwrap();
-        let mut k = Keybase::new(ku, kp, None).unwrap();
+        
         let result = k.logout();
         assert!(!result.is_err());
+        assert_eq!(k.status.logged_in, false);
+
+        let result = k.login();
+        assert!(!result.is_err());
+        assert_eq!(k.status.logged_in, true);
     }
 }
