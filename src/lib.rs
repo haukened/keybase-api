@@ -59,15 +59,6 @@ pub(crate) mod keybase_cmd {
     }
 }
 
-fn default_device() -> DeviceResponse {
-    DeviceResponse {
-        type_: String::default(),
-        name: String::default(),
-        device_id: String::default(),
-        status: false
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StatusResponse {
     #[serde(rename = "Username")]
@@ -77,7 +68,7 @@ pub struct StatusResponse {
     #[serde(default = "bool::default")]
     pub logged_in: bool,
     #[serde(rename = "Device")]
-    #[serde(default = "default_device")]
+    #[serde(deserialize_with = "parse_device_response")]
     pub device: DeviceResponse,
 }
 
@@ -94,6 +85,24 @@ pub struct DeviceResponse {
     #[serde(deserialize_with = "de_bool_from_int")]
     #[serde(default = "bool::default")]
     status: bool,
+}
+
+fn default_device() -> DeviceResponse {
+    DeviceResponse {
+        type_: String::default(),
+        name: String::default(),
+        device_id: String::default(),
+        status: false
+    }
+}
+
+fn parse_device_response<'de, D>(deserializer: D) -> Result<DeviceResponse, D::Error>
+    where D: Deserializer<'de>
+{
+    Deserialize::deserialize(deserializer)
+        .map(|x: Option<_>| {
+            x.unwrap_or(default_device())
+        })
 }
 
 #[cfg_attr(tarpaulin, skip)]
