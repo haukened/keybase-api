@@ -1,12 +1,14 @@
 use crate::keybase_cmd;
-use super::StatusResponse;
+use super::{
+    StatusResponse,
+    keybase_error::*,
+};
+
 use std::{
     fmt,
     path::PathBuf,
     thread::JoinHandle,
 };
-
-use super::keybase_error::*;
 
 pub struct Keybase {
     pub username: String,
@@ -47,6 +49,16 @@ impl Keybase {
             listen_threads: vec![],
         })
     }
+
+    pub fn logout(&mut self) -> Result<()> {
+        let _output = keybase_cmd::exec(&self.keybase_path, &["logout"], None)?;
+        Ok(())
+    }
+
+    pub fn login(&mut self) -> Result<()> {
+        let _output = keybase_cmd::exec(&self.keybase_path, &["oneshot", "-u", &self.username.as_mut_str()], Some(self.paperkey.clone()))?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -55,6 +67,7 @@ mod tests {
     use std::{
         string::String,
         path::PathBuf,
+        env::var,
     };
 
     #[test]
@@ -75,5 +88,23 @@ mod tests {
     fn can_print_keybase() {
         let k = Keybase::new("none", "none", None).unwrap();
         println!("{:?}", k);
+    }
+
+    #[test]
+    fn can_login() {
+        let ku = var("KEYBASE_USERNAME").unwrap();
+        let kp = var("KEYBASE_PAPERKEY").unwrap();
+        let mut k = Keybase::new(ku, kp, None).unwrap();
+        let result = k.login();
+        assert!(!result.is_err());
+    }
+
+    #[test]
+    fn can_logout() {
+        let ku = var("KEYBASE_USERNAME").unwrap();
+        let kp = var("KEYBASE_PAPERKEY").unwrap();
+        let mut k = Keybase::new(ku, kp, None).unwrap();
+        let result = k.logout();
+        assert!(!result.is_err());
     }
 }
