@@ -43,12 +43,15 @@ jobs:
       run: sudo touch /etc/default/keybase
     - name: Install Keybase
       run: sudo apt install ./keybase_amd64.deb
-    - name: Keybase Login
+    #- name: Keybase Login
+    #  env:
+    #    KEYBASE_USERNAME: ${{ secrets.KEYBASE_USERNAME }}
+    #    KEYBASE_PAPERKEY: ${{ secrets.KEYBASE_PAPERKEY }}
+    #  run: keybase oneshot
+    - name: Cargo Tests and Code Coverage Report
       env:
         KEYBASE_USERNAME: ${{ secrets.KEYBASE_USERNAME }}
         KEYBASE_PAPERKEY: ${{ secrets.KEYBASE_PAPERKEY }}
-      run: keybase oneshot
-    - name: Cargo Tests and Code Coverage Report
       run: cargo tarpaulin --coveralls ${{ secrets.COVERALLS_TOKEN }}
     - name: Keybase Logout
       if: always()
