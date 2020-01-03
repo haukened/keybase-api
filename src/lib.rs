@@ -8,6 +8,7 @@ pub(crate) mod keybase_cmd {
     use serde_json;
     use std::path::{Path, PathBuf};
     use std::process::{Command, Stdio};
+    use std::io::Write;
 
     pub fn find_keybase() -> Result<PathBuf> {
         let local_path = String::from_utf8(
@@ -22,27 +23,30 @@ pub(crate) mod keybase_cmd {
     }
 
     pub fn call_status(keybase_path: &Path) -> Result<StatusResponse> {
-        let output = exec(keybase_path, &["status", "-j"])?;
+        let output = exec(keybase_path, &["status", "-j"], None)?;
         let res: StatusResponse = serde_json::from_str(&output)?;
         Ok(res)
     }
 
     pub fn call_version(keybase_path: &Path) -> Result<String> {
-        let output = exec(keybase_path, &["version", "-S", "-f", "s"])?;
+        let output = exec(keybase_path, &["version", "-S", "-f", "s"], None)?;
         Ok(output)
     }
 
-    pub fn exec<I, S>(keybase_path: &Path, args: I) -> Result<String>
+    pub fn exec<I, S>(keybase_path: &Path, args: I, stdin_to_write: Option<String>) -> Result<String>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<std::ffi::OsStr>,
     {
-        let child_proc = Command::new(keybase_path)
+        let mut child_proc = Command::new(keybase_path)
             .args(args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .spawn()
-            .chain_err(|| "Failed to execute Keybase command")?;
+            .spawn()?;
+        if let Some(stdin_found) = stdin_to_write {
+            let child_stdin = child_proc.stdin.as_mut().expect("Failed to open stdin");
+            child_stdin.write_all(stdin_found.as_bytes())?;
+        }
         let output = child_proc.wait_with_output()?;
         if !output.status.success() {
             return Err(std::io::Error::new(
@@ -55,24 +59,40 @@ pub(crate) mod keybase_cmd {
     }
 }
 
+fn default_device() -> DeviceResponse {
+    DeviceResponse {
+        type_: String::default(),
+        name: String::default(),
+        device_id: String::default(),
+        status: false
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StatusResponse {
     #[serde(rename = "Username")]
+    #[serde(default = "String::default")]
     pub username: String,
     #[serde(rename = "LoggedIn")]
+    #[serde(default = "bool::default")]
     pub logged_in: bool,
     #[serde(rename = "Device")]
+    #[serde(default = "default_device")]
     pub device: DeviceResponse,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DeviceResponse {
     #[serde(rename = "type")]
+    #[serde(default = "String::default")]
     type_: String,
+    #[serde(default = "String::default")]
     name: String,
     #[serde(rename = "deviceID")]
+    #[serde(default = "String::default")]
     device_id: String,
     #[serde(deserialize_with = "de_bool_from_int")]
+    #[serde(default = "bool::default")]
     status: bool,
 }
 
@@ -144,6 +164,6 @@ mod tests {
     #[test]
     fn cant_exec_command() {
         let kb_fakepath = std::path::Path::new("/none/abcde").to_path_buf();
-        assert!(exec(&kb_fakepath, &["none", "nil", "nada"]).is_err())
+        assert!(exec(&kb_fakepath, &["none", "nil", "nada"], None).is_err())
     }
 }
