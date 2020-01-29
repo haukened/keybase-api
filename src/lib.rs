@@ -4,7 +4,7 @@ extern crate error_chain;
 pub mod keybase;
 pub use keybase::Keybase;
 
-use serde::{Deserialize, Serialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StatusResponse {
@@ -40,23 +40,22 @@ impl Default for DeviceResponse {
             type_: String::default(),
             name: String::default(),
             device_id: String::default(),
-            status: false
+            status: false,
         }
     }
 }
 
 fn parse_device_response<'de, D>(deserializer: D) -> Result<DeviceResponse, D::Error>
-    where D: Deserializer<'de>
+where
+    D: Deserializer<'de>,
 {
-    Deserialize::deserialize(deserializer)
-        .map(|x: Option<_>| {
-            x.unwrap_or_else(Default::default)
-        })
+    Deserialize::deserialize(deserializer).map(|x: Option<_>| x.unwrap_or_else(Default::default))
 }
 
 #[cfg_attr(tarpaulin, skip)]
 fn de_bool_from_int<'de, D>(deserializer: D) -> Result<bool, D::Error>
-    where D: Deserializer<'de>
+where
+    D: Deserializer<'de>,
 {
     match u8::deserialize(deserializer)? {
         0 => Ok(false),
