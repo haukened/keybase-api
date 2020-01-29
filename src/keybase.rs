@@ -1,7 +1,6 @@
-use crate::keybase_cmd;
-use super::{
+use crate::{
     StatusResponse,
-    keybase_error::*,
+    keybase::error::*,
 };
 
 use std::{
@@ -9,6 +8,9 @@ use std::{
     path::PathBuf,
     thread::JoinHandle,
 };
+
+pub(crate) mod cmd;
+pub(crate) mod error;
 
 pub struct Keybase {
     pub username: String,
@@ -29,19 +31,17 @@ impl fmt::Debug for Keybase {
 }
 
 impl Keybase {
-    pub fn new<S>(username: S, paperkey: S, opt_path: Option<PathBuf>) -> Result<Keybase> 
-    where 
-        S: Into<String>,
+    pub fn new(username: impl Into<String>, paperkey: impl Into<String>, opt_path: Option<PathBuf>) -> Result<Keybase>
     {
         let username: String = username.into();
         let paperkey: String = paperkey.into();
         // use use specified keybase path OR
         let keybase_path: PathBuf = opt_path.ok_or_else(|| {
             // use `which` to find the keybase binary OR
-            keybase_cmd::find_keybase()
+            cmd::find_keybase()
         }).or_else(|e| e)?;
 
-        let keybase_status: StatusResponse = keybase_cmd::call_status(&keybase_path)?;
+        let keybase_status: StatusResponse = cmd::call_status(&keybase_path)?;
         Ok(Keybase {
             username,
             paperkey,
@@ -52,14 +52,14 @@ impl Keybase {
     }
 
     pub fn logout(&mut self) -> Result<()> {
-        let _output = keybase_cmd::exec(&self.keybase_path, &["logout"], None)?;
-        self.status = keybase_cmd::call_status(&self.keybase_path)?;
+        let _output = cmd::exec(&self.keybase_path, &["logout"], None)?;
+        self.status = cmd::call_status(&self.keybase_path)?;
         Ok(())
     }
 
     pub fn login(&mut self) -> Result<()> {
-        let _output = keybase_cmd::exec(&self.keybase_path, &["oneshot", "-u", &self.username.as_mut_str()], Some(self.paperkey.clone()))?;
-        self.status = keybase_cmd::call_status(&self.keybase_path)?;
+        let _output = cmd::exec(&self.keybase_path, &["oneshot", "-u", &self.username.as_mut_str()], Some(self.paperkey.clone()))?;
+        self.status = cmd::call_status(&self.keybase_path)?;
         Ok(())
     }
 }
@@ -78,7 +78,7 @@ mod tests {
         let k = Keybase::new("none", "none", None).unwrap();
         assert_eq!(k.username, String::from("none"));
         assert_eq!(k.paperkey, String::from("none"));
-        assert_eq!(k.keybase_path, super::keybase_cmd::find_keybase().unwrap());
+        assert_eq!(k.keybase_path, super::cmd::find_keybase().unwrap());
     }
 
     #[test]
