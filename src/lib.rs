@@ -62,10 +62,10 @@ pub(crate) mod keybase_cmd {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StatusResponse {
     #[serde(rename = "Username")]
-    #[serde(default = "String::default")]
+    #[serde(default)]
     pub username: String,
     #[serde(rename = "LoggedIn")]
-    #[serde(default = "bool::default")]
+    #[serde(default)]
     pub logged_in: bool,
     #[serde(rename = "Device")]
     #[serde(deserialize_with = "parse_device_response")]
@@ -75,24 +75,26 @@ pub struct StatusResponse {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DeviceResponse {
     #[serde(rename = "type")]
-    #[serde(default = "String::default")]
+    #[serde(default)]
     type_: String,
-    #[serde(default = "String::default")]
+    #[serde(default)]
     name: String,
     #[serde(rename = "deviceID")]
-    #[serde(default = "String::default")]
+    #[serde(default)]
     device_id: String,
     #[serde(deserialize_with = "de_bool_from_int")]
     #[serde(default = "bool::default")]
     status: bool,
 }
 
-fn default_device() -> DeviceResponse {
-    DeviceResponse {
-        type_: String::default(),
-        name: String::default(),
-        device_id: String::default(),
-        status: false
+impl Default for DeviceResponse {
+    fn default() -> Self {
+        DeviceResponse {
+            type_: String::default(),
+            name: String::default(),
+            device_id: String::default(),
+            status: false
+        }
     }
 }
 
@@ -101,7 +103,7 @@ fn parse_device_response<'de, D>(deserializer: D) -> Result<DeviceResponse, D::E
 {
     Deserialize::deserialize(deserializer)
         .map(|x: Option<_>| {
-            x.unwrap_or(default_device())
+            x.unwrap_or(DeviceResponse::default())
         })
 }
 
