@@ -103,7 +103,7 @@ fn parse_device_response<'de, D>(deserializer: D) -> Result<DeviceResponse, D::E
 {
     Deserialize::deserialize(deserializer)
         .map(|x: Option<_>| {
-            x.unwrap_or(DeviceResponse::default())
+            x.unwrap_or_else(Default::default)
         })
 }
 

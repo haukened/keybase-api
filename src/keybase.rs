@@ -36,10 +36,11 @@ impl Keybase {
         let username: String = username.into();
         let paperkey: String = paperkey.into();
         // use use specified keybase path OR
-        let keybase_path: PathBuf = opt_path.unwrap_or(
+        let keybase_path: PathBuf = opt_path.ok_or_else(|| {
             // use `which` to find the keybase binary OR
-            keybase_cmd::find_keybase()?
-            );
+            keybase_cmd::find_keybase()
+        }).or_else(|e| e)?;
+
         let keybase_status: StatusResponse = keybase_cmd::call_status(&keybase_path)?;
         Ok(Keybase {
             username,
