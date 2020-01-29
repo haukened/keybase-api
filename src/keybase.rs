@@ -1,14 +1,9 @@
-use crate::keybase_cmd;
-use super::{
-    StatusResponse,
-    keybase_error::*,
-};
+use crate::{keybase::error::*, StatusResponse};
 
-use std::{
-    fmt,
-    path::PathBuf,
-    thread::JoinHandle,
-};
+use std::{fmt, path::PathBuf, thread::JoinHandle};
+
+pub(crate) mod cmd;
+pub(crate) mod error;
 
 pub struct Keybase {
     pub username: String,
@@ -20,7 +15,9 @@ pub struct Keybase {
 
 impl fmt::Debug for Keybase {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!( f, "Keybase {{ username: {}, status: {:?}, listen_threads: {} }}",
+        write!(
+            f,
+            "Keybase {{ username: {}, status: {:?}, listen_threads: {} }}",
             self.username,
             self.status,
             self.listen_threads.len()
@@ -29,19 +26,22 @@ impl fmt::Debug for Keybase {
 }
 
 impl Keybase {
-    pub fn new<S>(username: S, paperkey: S, opt_path: Option<PathBuf>) -> Result<Keybase> 
-    where 
-        S: Into<String>,
-    {
+    pub fn new(
+        username: impl Into<String>,
+        paperkey: impl Into<String>,
+        opt_path: Option<PathBuf>,
+    ) -> Result<Keybase> {
         let username: String = username.into();
         let paperkey: String = paperkey.into();
         // use use specified keybase path OR
-        let keybase_path: PathBuf = opt_path.ok_or_else(|| {
-            // use `which` to find the keybase binary OR
-            keybase_cmd::find_keybase()
-        }).or_else(|e| e)?;
+        let keybase_path: PathBuf = opt_path
+            .ok_or_else(|| {
+                // use `which` to find the keybase binary OR
+                cmd::find_keybase()
+            })
+            .or_else(|e| e)?;
 
-        let keybase_status: StatusResponse = keybase_cmd::call_status(&keybase_path)?;
+        let keybase_status: StatusResponse = cmd::call_status(&keybase_path)?;
         Ok(Keybase {
             username,
             paperkey,
@@ -52,14 +52,18 @@ impl Keybase {
     }
 
     pub fn logout(&mut self) -> Result<()> {
-        let _output = keybase_cmd::exec(&self.keybase_path, &["logout"], None)?;
-        self.status = keybase_cmd::call_status(&self.keybase_path)?;
+        let _output = cmd::exec(&self.keybase_path, &["logout"], None)?;
+        self.status = cmd::call_status(&self.keybase_path)?;
         Ok(())
     }
 
     pub fn login(&mut self) -> Result<()> {
-        let _output = keybase_cmd::exec(&self.keybase_path, &["oneshot", "-u", &self.username.as_mut_str()], Some(self.paperkey.clone()))?;
-        self.status = keybase_cmd::call_status(&self.keybase_path)?;
+        let _output = cmd::exec(
+            &self.keybase_path,
+            &["oneshot", "-u", &self.username.as_mut_str()],
+            Some(self.paperkey.clone()),
+        )?;
+        self.status = cmd::call_status(&self.keybase_path)?;
         Ok(())
     }
 }
@@ -67,18 +71,14 @@ impl Keybase {
 #[cfg(test)]
 mod tests {
     use super::Keybase;
-    use std::{
-        string::String,
-        path::PathBuf,
-        env::var,
-    };
+    use std::{env::var, path::PathBuf, string::String};
 
     #[test]
     fn can_create_keybase() {
         let k = Keybase::new("none", "none", None).unwrap();
         assert_eq!(k.username, String::from("none"));
         assert_eq!(k.paperkey, String::from("none"));
-        assert_eq!(k.keybase_path, super::keybase_cmd::find_keybase().unwrap());
+        assert_eq!(k.keybase_path, super::cmd::find_keybase().unwrap());
     }
 
     #[test]
@@ -98,7 +98,7 @@ mod tests {
         let ku = var("KEYBASE_USERNAME").unwrap();
         let kp = var("KEYBASE_PAPERKEY").unwrap();
         let mut k = Keybase::new(ku, kp, None).unwrap();
-        
+
         let result = k.logout();
         assert!(!result.is_err());
         assert_eq!(k.status.logged_in, false);
