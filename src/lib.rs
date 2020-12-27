@@ -1,10 +1,10 @@
-#[macro_use]
-extern crate error_chain;
-
 pub mod keybase;
 pub use keybase::Keybase;
 
 use serde::{Deserialize, Deserializer, Serialize};
+
+#[cfg(not(unix))]
+compile_error!("sorry. this library currently depends heavily on native unix utilities, and thus will not compile on other platforms");
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StatusResponse {
@@ -71,43 +71,45 @@ where
 mod tests {
     use crate::keybase::cmd::*;
 
-    #[test]
-    fn can_find_keybase() {
-        println!("Keybase is at: {:?}", find_keybase());
-        assert!(!find_keybase().unwrap().to_str().unwrap().is_empty());
+    #[tokio::test]
+    async fn can_find_keybase() {
+		let search_result = find_keybase().await;
+        println!("Keybase is at: {:?}", search_result);
+        assert!(!search_result.unwrap().to_str().unwrap().is_empty());
     }
 
-    #[test]
-    fn can_find_version() {
-        let kb_path = find_keybase().unwrap();
-        println!("Keybase is version {:?}", call_version(&kb_path).unwrap());
-        assert!(!call_version(&kb_path).unwrap().is_empty());
+    #[tokio::test]
+    async fn can_find_version() {
+        let kb_search_result = find_keybase().await.unwrap();
+		let version_result = call_version(&kb_search_result).await.unwrap();
+        println!("Keybase is version {:?}", version_result);
+        assert!(!version_result.is_empty());
     }
 
-    #[test]
-    fn cant_find_version() {
+    #[tokio::test]
+    async fn cant_find_version() {
         let kb_fakepath = std::path::Path::new("/bin/false").to_path_buf();
-        assert!(call_version(&kb_fakepath).is_err());
+        assert!(call_version(&kb_fakepath).await.is_err());
     }
 
-    #[test]
-    fn can_get_status() {
-        let kb_path = find_keybase().unwrap();
-        let kb_status = call_status(&kb_path).unwrap();
+    #[tokio::test]
+    async fn can_get_status() {
+        let kb_path = find_keybase().await.unwrap();
+        let kb_status = call_status(&kb_path).await.unwrap();
         // ensure the value must be true or false - this will fail if the device is not provisioned
         // As the DeviceResponse struct will come from a JSON null entry and panic.
         assert!(kb_status.logged_in == false || kb_status.logged_in == true);
     }
 
-    #[test]
-    fn cant_get_status() {
+    #[tokio::test]
+    async fn cant_get_status() {
         let kb_fakepath = std::path::Path::new("/bin/false").to_path_buf();
-        assert!(call_status(&kb_fakepath).is_err());
+        assert!(call_status(&kb_fakepath).await.is_err());
     }
 
-    #[test]
-    fn cant_exec_command() {
+    #[tokio::test]
+    async fn cant_exec_command() {
         let kb_fakepath = std::path::Path::new("/none/abcde").to_path_buf();
-        assert!(exec(&kb_fakepath, &["none", "nil", "nada"], None).is_err())
+        assert!(exec(&kb_fakepath, &["none", "nil", "nada"], None).await.is_err())
     }
 }

@@ -1,4 +1,4 @@
-use crate::{keybase::error::*, StatusResponse};
+use crate::StatusResponse;
 
 use std::{fmt, path::PathBuf, thread::JoinHandle};
 
@@ -26,22 +26,22 @@ impl fmt::Debug for Keybase {
 }
 
 impl Keybase {
-    pub fn new(
+    pub async fn new(
         username: impl Into<String>,
         paperkey: impl Into<String>,
         opt_path: Option<PathBuf>,
-    ) -> Result<Keybase> {
+    ) -> error::Result<Keybase> {
         let username: String = username.into();
         let paperkey: String = paperkey.into();
         // use use specified keybase path OR
-        let keybase_path: PathBuf = opt_path
-            .ok_or_else(|| {
-                // use `which` to find the keybase binary OR
-                cmd::find_keybase()
-            })
-            .or_else(|e| e)?;
+        let keybase_path: PathBuf = match opt_path {
+			Some(p) => p,
+			None => {
+				cmd::find_keybase().await?
+			}
+		};
 
-        let keybase_status: StatusResponse = cmd::call_status(&keybase_path)?;
+        let keybase_status: StatusResponse = cmd::call_status(&keybase_path).await?;
         Ok(Keybase {
             username,
             paperkey,
@@ -51,19 +51,19 @@ impl Keybase {
         })
     }
 
-    pub fn logout(&mut self) -> Result<()> {
-        let _output = cmd::exec(&self.keybase_path, &["logout"], None)?;
-        self.status = cmd::call_status(&self.keybase_path)?;
+    pub async fn logout(&mut self) -> error::Result<()> {
+        let _output = cmd::exec(&self.keybase_path, &["logout"], None).await?;
+        self.status = cmd::call_status(&self.keybase_path).await?;
         Ok(())
     }
 
-    pub fn login(&mut self) -> Result<()> {
+    pub async fn login(&mut self) -> error::Result<()> {
         let _output = cmd::exec(
             &self.keybase_path,
             &["oneshot", "-u", &self.username.as_mut_str()],
             Some(self.paperkey.clone()),
-        )?;
-        self.status = cmd::call_status(&self.keybase_path)?;
+        ).await?;
+        self.status = cmd::call_status(&self.keybase_path).await?;
         Ok(())
     }
 }
@@ -71,39 +71,39 @@ impl Keybase {
 #[cfg(test)]
 mod tests {
     use super::Keybase;
-    use std::{env::var, path::PathBuf, string::String};
+    use std::{env, path::PathBuf, string::String};
 
-    #[test]
-    fn can_create_keybase() {
-        let k = Keybase::new("none", "none", None).unwrap();
+    #[tokio::test]
+    async fn can_create_keybase() {
+        let k = Keybase::new("none", "none", None).await.unwrap();
         assert_eq!(k.username, String::from("none"));
         assert_eq!(k.paperkey, String::from("none"));
-        assert_eq!(k.keybase_path, super::cmd::find_keybase().unwrap());
+        assert_eq!(k.keybase_path, super::cmd::find_keybase().await.unwrap());
     }
 
-    #[test]
-    fn cant_create_keybase() {
-        let k = Keybase::new("none", "none", Some(PathBuf::from("/bin/false")));
+    #[tokio::test]
+    async fn cant_create_keybase() {
+        let k = Keybase::new("none", "none", Some(PathBuf::from("/bin/false"))).await;
         assert!(k.is_err());
     }
 
-    #[test]
-    fn can_print_keybase() {
-        let k = Keybase::new("none", "none", None).unwrap();
+    #[tokio::test]
+    async fn can_print_keybase() {
+        let k = Keybase::new("none", "none", None).await.unwrap();
         println!("{:?}", k);
     }
 
-    #[test]
-    fn can_logout_then_login() {
-        let ku = var("KEYBASE_USERNAME").unwrap();
-        let kp = var("KEYBASE_PAPERKEY").unwrap();
-        let mut k = Keybase::new(ku, kp, None).unwrap();
+    #[tokio::test]
+    async fn can_logout_then_login() {
+        let ku = env::var("KEYBASE_USERNAME").unwrap();
+        let kp = env::var("KEYBASE_PAPERKEY").unwrap();
+        let mut k = Keybase::new(ku, kp, None).await.unwrap();
 
-        let result = k.logout();
+        let result = k.logout().await;
         assert!(!result.is_err());
         assert_eq!(k.status.logged_in, false);
 
-        let result = k.login();
+        let result = k.login().await;
         assert!(!result.is_err());
         assert_eq!(k.status.logged_in, true);
     }
